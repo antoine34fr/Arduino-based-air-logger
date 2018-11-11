@@ -8,8 +8,8 @@ RTC_PCF8523 rtc; // define the Real Time Clock object
 
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
-#define LOG_INTERVAL  3000 // mills between entries
-#define SYNC_INTERVAL 3000 // mills between calls to flush() - to write data to the card
+#define LOG_INTERVAL  10000 // mills between entries
+#define SYNC_INTERVAL 10000 // mills between calls to flush() - to write data to the card
 uint32_t syncTime = 0; // time of last sync()
 #define DHTPIN 7     // what digital pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
@@ -86,6 +86,7 @@ void setup()
   pinMode(iled, OUTPUT);
   digitalWrite(iled, LOW);                                     //iled default closed
   Serial.begin(9600);
+  pinMode(3, OUTPUT); //the LED
 
   Serial.print("Initializing SD card...");
   pinMode(10, OUTPUT);
@@ -207,7 +208,27 @@ void loop() {
   syncTime = millis();
 
   logfile.flush();  //Actually writes in the file
+
+//if air quality is bad turn on LED if quality OK stays off
+  if (density > 45) {  
+    digitalWrite(3, HIGH);
+  } else {
+    digitalWrite(3, LOW);
+  }
   
+  Serial.print(now.year(), DEC); 
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(" - ");
+  Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+  Serial.print(" ");
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.println(now.second(), DEC);
   Serial.print(t);
   Serial.println(" degrees celcius");
   Serial.print(h);
