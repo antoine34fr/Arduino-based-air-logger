@@ -1,15 +1,15 @@
-#include "DHT.h" //sensor lib
+#include <DHT.h> //sensor lib
 #include <Wire.h> //lib to communocate with I2C/TWI devices
-#include "SD.h" //logging lib
-#include "RTClib.h" //clock lib
+#include <SD.h> //logging lib
+#include <RTClib.h> //clock lib
 #include <SdFat.h> //lib needed to create a CSV file with a correct time/date 
 
 RTC_PCF8523 rtc; // define the Real Time Clock object
 
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+//char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
-#define LOG_INTERVAL  10000 // mills between entries
-#define SYNC_INTERVAL 10000 // mills between calls to flush() - to write data to the card
+#define LOG_INTERVAL  2000 // mills between entries
+#define SYNC_INTERVAL 2000 // mills between calls to flush() - to write data to the card
 uint32_t syncTime = 0; // time of last sync()
 #define DHTPIN 7     // what digital pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
@@ -26,13 +26,13 @@ const int vout = 0;                                            //analog input of
 float density, voltage;
 int   adcvalue;
 
-/*
-Filter function for the dust sensor :
-*/
+
+//Filter function for the dust sensor :
+
 int Filter(int m)
 {
-  static int flag_first = 0, _buff[10], sum;
-  const int _buff_max = 10;
+  static int flag_first = 0, _buff[5], sum;
+  const int _buff_max = 5;
   int i;
   
   if(flag_first == 0)
@@ -53,10 +53,10 @@ int Filter(int m)
     {
       _buff[i] = _buff[i + 1];
     }
-    _buff[9] = m;
-    sum += _buff[9];
+    _buff[4] = m;
+    sum += _buff[4];
     
-    i = sum / 10.0;
+    i = sum / 5.0;
     return i;
   }
 }
@@ -129,15 +129,7 @@ void setup()
 
   DateTime now = rtc.now();  //measure the time and date
 
-  logfile.print(now.year(), DEC);  //print the following in the new file. once.
-  logfile.print('/');
-  logfile.print(now.month(), DEC);
-  logfile.print('/');
-  logfile.print(now.day(), DEC);
-  logfile.print(" - ");
-  logfile.print(daysOfTheWeek[now.dayOfTheWeek()]);
-  logfile.print(", ");
-  logfile.println("Time,Temperature (C),Humidity (%),Heat Index (C),Dust Density (µg/m3)");
+  logfile.println("Date Time,Temperature (C),Humidity (%),Heat Index (C),Dust Density (µg/m3)"); //print the following in the new file. once.
 
 }
 
@@ -153,7 +145,7 @@ void loop() {
   adcvalue = analogRead(vout);
   digitalWrite(iled, LOW);
   
-  adcvalue = Filter(adcvalue);
+  adcvalue = Filter(adcvalue); //FOR THE FILTER FUNCTION
   
   /*
   covert voltage (mv)
@@ -183,8 +175,13 @@ void loop() {
   }
 
   DateTime now = rtc.now();  //measure the time
-
-  logfile.print(", ");  //DONT FORGET THE COMAS TO CHANGE CELLS IN THE CSV FILE
+  
+  logfile.print(now.year(), DEC);  //print the following in the new file. once.
+  logfile.print('-');
+  logfile.print(now.month(), DEC);
+  logfile.print('-');
+  logfile.print(now.day(), DEC);
+  logfile.print(" ");  
   logfile.print(now.hour(), DEC);
   logfile.print(':');
   logfile.print(now.minute(), DEC);
@@ -193,7 +190,8 @@ void loop() {
 
   float hif = dht.computeHeatIndex(f, h);
   float hic = dht.computeHeatIndex(t, h, false);
-
+  
+//DONT FORGET THE COMAS TO CHANGE CELLS IN THE CSV FILE
   logfile.print(", ");
   logfile.print(t);
   logfile.print(", ");
@@ -222,7 +220,7 @@ void loop() {
   Serial.print('/');
   Serial.print(now.day(), DEC);
   Serial.print(" - ");
-  Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+//  Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
   Serial.print(" ");
   Serial.print(now.hour(), DEC);
   Serial.print(':');
